@@ -1,0 +1,621 @@
+{
+  "info": {
+    "name": "EchoMind 智能客服 API 测试",
+    "description": "EchoMind Sidecar 服务的 API 测试集合\n\n基础路径: http://localhost:8082\n\n包含:\n1. 对话接口 (POST /api/chat)\n2. 流式对话 (POST /api/chat/stream)\n3. 评测接口 (POST /api/eval/run)\n4. 监控接口 (GET /api/monitor/metrics)\n5. 健康检查 (GET /actuator/health)\n\n测试前请确保 echo-mind-service 已启动，AI_API_KEY 已配置。",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1️⃣ 对话接口",
+      "description": "非流式对话接口，支持商户查询、优惠券、用户服务等全场景",
+      "item": [
+        {
+          "name": "1.1 商户推荐 - 川菜馆推荐",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('状态码200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('返回成功', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.code).to.eql(200);",
+                  "    pm.expect(json.data).to.not.be.null;",
+                  "    pm.expect(json.data.answer).to.not.be.null;",
+                  "    pm.expect(json.data.intent).to.not.be.null;",
+                  "    pm.expect(json.data.intentConfidence).to.be.at.least(0);",
+                  "    pm.expect(json.data.agentUsed).to.not.be.null;",
+                  "    pm.expect(json.data.sessionId).to.not.be.null;",
+                  "});",
+                  "",
+                  "pm.test('意图为商户推荐', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.data.intent).to.eql('shop_recommend');",
+                  "});",
+                  "",
+                  "pm.test('响应延迟存在', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.data.metrics.latencyMs).to.be.at.least(0);",
+                  "});",
+                  "",
+                  "console.log('回答内容:', pm.response.json().data.answer);",
+                  "console.log('耗时:', pm.response.json().data.metrics.latencyMs, 'ms');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"userId\": 10001,\n    \"message\": \"帮我推荐一家评分高的川菜馆\",\n    \"sessionId\": \"session-test-001\",\n    \"stream\": false\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/api/chat",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "chat"]
+            }
+          }
+        },
+        {
+          "name": "1.2 商户查询 - 查商户信息",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"userId\": 10001,\n    \"message\": \"查一下川味轩的地址和电话\",\n    \"sessionId\": \"session-test-001\",\n    \"stream\": false\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/api/chat",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "chat"]
+            }
+          }
+        },
+        {
+          "name": "1.3 优惠券查询 - 查可用券",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"userId\": 10001,\n    \"message\": \"这家店有优惠券可以用吗？\",\n    \"sessionId\": \"session-test-002\",\n    \"stream\": false\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/api/chat",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "chat"]
+            }
+          }
+        },
+        {
+          "name": "1.4 秒杀查询 - 查秒杀活动",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"userId\": 10001,\n    \"message\": \"秒杀活动什么时候开始？\",\n    \"sessionId\": \"session-test-003\",\n    \"stream\": false\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/api/chat",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "chat"]
+            }
+          }
+        },
+        {
+          "name": "1.5 用户信息查询 - 查个人资料",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"userId\": 10001,\n    \"message\": \"查一下我的个人信息\",\n    \"sessionId\": \"session-test-004\",\n    \"stream\": false\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/api/chat",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "chat"]
+            }
+          }
+        },
+        {
+          "name": "1.6 投诉建议 - 用户投诉",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"userId\": 10001,\n    \"message\": \"我要投诉，这家店的服务太差了\",\n    \"sessionId\": \"session-test-005\",\n    \"stream\": false\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/api/chat",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "chat"]
+            }
+          }
+        },
+        {
+          "name": "1.7 闲聊 - 打招呼",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"userId\": 10001,\n    \"message\": \"你好，今天天气怎么样？\",\n    \"sessionId\": \"session-test-006\",\n    \"stream\": false\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/api/chat",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "chat"]
+            }
+          }
+        },
+        {
+          "name": "1.8 关注操作 - 用户关注",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"userId\": 10001,\n    \"message\": \"怎么关注这个商户？\",\n    \"sessionId\": \"session-test-007\",\n    \"stream\": false\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/api/chat",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "chat"]
+            }
+          }
+        },
+        {
+          "name": "1.9 多轮对话 - 后续追问",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"userId\": 10001,\n    \"message\": \"那个评分最高的在哪条路上？\",\n    \"sessionId\": \"session-test-001\",\n    \"stream\": false\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/api/chat",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "chat"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2️⃣ 流式对话接口 (SSE)",
+      "description": "基于 Spring WebFlux + Flux 的 Server-Sent Events 流式输出\n\n调用方式:\n1. Postman 发送 POST 请求到 /api/chat/stream\n2. 设置 Accept: text/event-stream\n3. 响应会逐字推送，包含 thinking/token/done 三种事件类型\n\ncurl 示例:\ncurl -X POST http://localhost:8082/api/chat/stream \\\n  -H 'Content-Type: application/json' \\\n  -H 'Accept: text/event-stream' \\\n  -d '{\"userId\":1,\"message\":\"推荐一家好吃的火锅店\",\"sessionId\":\"stream-001\"}'",
+      "item": [
+        {
+          "name": "2.1 SSE 流式对话 - 商户推荐",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('状态码200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('返回SSE流式格式', () => {",
+                  "    const body = pm.response.text();",
+                  "    pm.expect(body).to.include('data:');",
+                  "    pm.expect(body).to.include('event:');",
+                  "});",
+                  "",
+                  "pm.test('包含thinking事件', () => {",
+                  "    const body = pm.response.text();",
+                  "    pm.expect(body).to.include('\"type\":\"thinking\"');",
+                  "});",
+                  "",
+                  "pm.test('包含token事件', () => {",
+                  "    const body = pm.response.text();",
+                  "    pm.expect(body).to.include('\"type\":\"token\"');",
+                  "});",
+                  "",
+                  "pm.test('包含done事件', () => {",
+                  "    const body = pm.response.text();",
+                  "    pm.expect(body).to.include('\"type\":\"done\"');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/event-stream"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"userId\": 10001,\n    \"message\": \"帮我推荐一家评分高的川菜馆\",\n    \"sessionId\": \"stream-test-001\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/api/chat/stream",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "chat", "stream"]
+            }
+          }
+        },
+        {
+          "name": "2.2 SSE 流式对话 - 订单查询",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('状态码200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('返回SSE流式格式', () => {",
+                  "    const body = pm.response.text();",
+                  "    pm.expect(body).to.include('data:');",
+                  "    pm.expect(body).to.include('\"type\":\"done\"');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/event-stream"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"userId\": 10001,\n    \"message\": \"帮我查一下我的订单\",\n    \"sessionId\": \"stream-test-002\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/api/chat/stream",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "chat", "stream"]
+            }
+          }
+        },
+        {
+          "name": "2.3 SSE 流式对话 - 取消订单",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('状态码200', () => { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/event-stream"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"userId\": 10001,\n    \"message\": \"帮我取消订单1234567890\",\n    \"sessionId\": \"stream-test-003\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/api/chat/stream",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "chat", "stream"]
+            }
+          }
+        },
+        {
+          "name": "2.4 SSE 流式对话 - 退单(删除订单)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('状态码200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('返回SSE流式格式', () => {",
+                  "    const body = pm.response.text();",
+                  "    pm.expect(body).to.include('data:');",
+                  "    pm.expect(body).to.include('\"type\":\"done\"');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/event-stream"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"userId\": 10001,\n    \"message\": \"帮我删除订单1234567890的记录\",\n    \"sessionId\": \"stream-test-004\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/api/chat/stream",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "chat", "stream"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2️⃣ 评测接口",
+      "description": "LLM-as-Judge 四维度评测（准确性、相关性、完整性、友好度）",
+      "item": [
+        {
+          "name": "2.1 执行评测 - 全维度",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('状态码200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('返回评测结果', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.code).to.eql(200);",
+                  "    pm.expect(json.data).to.not.be.null;",
+                  "    pm.expect(json.data.overallScore).to.be.at.least(1);",
+                  "    pm.expect(json.data.dimensionScores).to.not.be.null;",
+                  "    pm.expect(json.data.sampleCount).to.be.at.least(1);",
+                  "});",
+                  "",
+                  "pm.test('包含四维度评分', () => {",
+                  "    const { accuracy, relevance, completeness, friendliness } = pm.response.json().data.dimensionScores;",
+                  "    pm.expect(accuracy).to.be.at.least(1).and.to.be.at.most(5);",
+                  "    pm.expect(relevance).to.be.at.least(1).and.to.be.at.most(5);",
+                  "    pm.expect(completeness).to.be.at.least(1).and.to.be.at.most(5);",
+                  "    pm.expect(friendliness).to.be.at.least(1).and.to.be.at.most(5);",
+                  "});",
+                  "",
+                  "pm.test('生成了批次ID', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.data.batchId).to.match(/eval-/);",
+                  "});",
+                  "",
+                  "console.log('评测批次:', pm.response.json().data.batchId);",
+                  "console.log('综合评分:', pm.response.json().data.overallScore);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"dataset\": \"golden_answers_v1\",\n    \"sampleSize\": 3,\n    \"dimensions\": [\"accuracy\", \"relevance\", \"completeness\", \"friendliness\"]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/api/eval/run",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "eval", "run"]
+            }
+          }
+        },
+        {
+          "name": "2.2 获取评测报告",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8082/api/eval/report/eval-20240315-001",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "eval", "report", "eval-20240315-001"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4️⃣ 监控接口",
+      "description": "Agent 性能指标和路由权重查询",
+      "item": [
+        {
+          "name": "4.1 获取监控指标",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('状态码200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('返回指标数据', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.code).to.eql(200);",
+                  "    pm.expect(json.data).to.not.be.null;",
+                  "});",
+                  "",
+                  "pm.test('包含系统级指标', () => {",
+                  "    const data = pm.response.json().data;",
+                  "    pm.expect(data.system).to.not.be.null;",
+                  "    pm.expect(data.system).to.have.property('totalRequests');",
+                  "    pm.expect(data.system).to.have.property('overallSatisfaction');",
+                  "});",
+                  "",
+                  "pm.test('包含权重信息', () => {",
+                  "    const data = pm.response.json().data;",
+                  "    pm.expect(data).to.have.property('weights');",
+                  "});",
+                  "",
+                  "console.log('系统请求总数:', pm.response.json().data.system.totalRequests);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8082/api/monitor/metrics",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "monitor", "metrics"]
+            }
+          }
+        },
+        {
+          "name": "4.2 触发监控闭环",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8082/api/monitor/cycle",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "monitor", "cycle"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5️⃣ 健康检查",
+      "description": "服务健康状态检测",
+      "item": [
+        {
+          "name": "5.1 Actuator 健康检查",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('状态码200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('服务状态为UP', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql('UP');",
+                  "    pm.expect(json.service).to.eql('echo-mind-service');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8082/actuator/health",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["actuator", "health"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8082",
+      "type": "string"
+    }
+  ]
+}

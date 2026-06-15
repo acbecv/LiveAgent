@@ -1,0 +1,145 @@
+server:
+  port: ${AI_SERVER_PORT:8082}
+
+spring:
+  application:
+    name: ai-service
+
+  # MySQL (与主项目共享实例，使用独立的表)
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:llsp}?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:your_password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # Redis (与主项目共享实例，使用 db=1 隔离)
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 1
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+          max-wait: 3000ms
+
+  # Spring AI 配置 (兼容通义千问/OpenAI协议)
+  ai:
+    openai:
+      api-key: "${AI_API_KEY:your_api_key_here}"
+      base-url: "${AI_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode}"
+      chat:
+        options:
+          model: "${AI_MODEL:qwen3.5-flash}"
+          temperature: 0.7
+          max-tokens: 2048
+      embedding:
+        options:
+          model: "${AI_EMBEDDING_MODEL:text-embedding-v3}"
+
+    # Redis Vector Store 配置
+    vectorstore:
+      redis:
+        uri: ${REDIS_HOST:localhost}:${REDIS_PORT:6379}/2
+        index: ai-vector-index
+        prefix: "ai:doc:"
+        initialize-schema: true
+
+  # Jackson 配置
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  mapper-locations: classpath:/mapper/*.xml
+  type-aliases-package: com.ai.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# AI 服务自定义配置
+ai:
+  # 主服务地址
+  dianping-base-url: ${DIANPING_BASE_URL:http://localhost:8081}
+
+  # 意图识别权重配置
+  intent:
+    weights:
+      llm: 0.5
+      embedding: 0.3
+      pattern: 0.2
+    confidence-threshold:
+      high: 0.8
+      medium: 0.6
+
+  # 记忆管理配置
+  memory:
+    short-term-max: 20
+    compress-threshold: 20
+    idle-compress-minutes: 30
+    mid-term-top-k: 3
+    compress-strategy: sliding-window
+
+  # ChromaDB 服务地址 (v2 API)
+  chromadb:
+    url: ${CHROMADB_URL:http://localhost:8000}
+    tenant: default_tenant
+    database: default_database
+
+  # ============================================
+  # RAG 知识库检索配置
+  # ============================================
+  rag:
+    # 是否在服务启动时自动注入知识库
+    ingest-on-startup: true
+    # ChromaDB 知识库集合名称
+    knowledge-collection: knowledge_base
+    # 默认检索 Top-K 条结果
+    default-top-k: 5
+    # 每路检索的 Top-K（向量/BM25 各取几条）
+    per-path-top-k: 5
+    # 相似度阈值（ChromaDB distance，越小越相似，超出则丢弃）
+    similarity-threshold: 1.0
+    # BM25 最低分数阈值
+    bm25-min-score: 0.1
+    # RRF 融合后最终返回 Top-K
+    final-top-k: 5
+    # 单个知识条目的最大字符数（超出截断）
+    max-item-length: 500
+    # 注入上下文的最大 token 数（超出预算的条目被丢弃）
+    max-context-tokens: 800
+    # 是否启用 LLM 多 Query 扩展（关闭则仅用原始 query）
+    multi-query-enabled: true
+
+  vector:
+    default-collection: knowledge_base
+    default-top-k: 5
+
+  # Agent 配置
+  agent:
+    max-retry: 2
+    timeout-ms: 30000
+
+  # 监控配置
+  monitor:
+    metrics-window-minutes: 60
+    weight-adjust-interval-minutes: 10
+
+# Actuator 配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.ai: DEBUG
+    org.springframework.ai: DEBUG
