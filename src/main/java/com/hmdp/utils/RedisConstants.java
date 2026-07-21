@@ -26,5 +26,7 @@ public class RedisConstants {
     public static final String ONE_LEVERLIMIT_KEY ="limit:onelevel:";
 
     public static final String TWO_LEVERLIMIT_KEY ="limit:twolevel:";
-
+    public static final String LIKES_BIZ_KEY_PREFIX = "likes:set:biz:";   // Set 存储点赞用户
+    public static final String LIKES_TIMES_KEY_PREFIX = "likes:times:type:"; // ZSet 缓存点赞总数（定时任务用）
+    public static final String BLOG_LIKES_KEY = "blog:likes";   // 新增：排行
 }

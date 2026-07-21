@@ -5,12 +5,14 @@ import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 
 @MapperScan("com.hmdp.mapper")
 @SpringBootApplication
 @EnableRabbit
 @EnableCaching
+@EnableScheduling
 public class HmDianPingApplication {
 
     public static void main(String[] args) {

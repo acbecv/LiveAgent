@@ -15,7 +15,9 @@ import com.hmdp.mapper.BlogMapper;
 import com.hmdp.service.IBlogService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.service.IFollowService;
+import com.hmdp.service.ILikedRecordService;
 import com.hmdp.service.IUserService;
+import com.hmdp.utils.RedisConstants;
 import com.hmdp.utils.SystemConstants;
 import com.hmdp.utils.UserHolder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +55,9 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
 
     @Autowired
     private IFollowService followService;
+
+    @Autowired
+    private ILikedRecordService  likedRecordService;
 
     @Override
     public Result queryById(Integer id) {
@@ -92,9 +97,12 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         }
 
         //2. 判断当前用户是否点赞
-        String key = BLOG_LIKED_KEY + blog.getId();
-        Double score = stringRedisTemplate.opsForZSet().score(key, userDTO.getId().toString());
-        blog.setIsLike(score != null);
+//        String key = BLOG_LIKED_KEY + blog.getId();
+//        Double score = stringRedisTemplate.opsForZSet().score(key, userDTO.getId().toString());
+//        blog.setIsLike(score != null);
+        // 改为使用新的 Set
+        Set<Long> likedIds = likedRecordService.isBlogLiked(Collections.singletonList(blog.getId()));
+        blog.setIsLike(likedIds.contains(blog.getId()));
     }
 
     private void queryBlogUser(Blog blog) {
@@ -134,18 +142,37 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
 
     @Override
     public Result queryBlogLikes(Integer id) {
-        String key = BLOG_LIKED_KEY + id;
-        //zrange key 0 4  查询zset中前5个元素
-        Set<String> top5 = stringRedisTemplate.opsForZSet().range(key, 0, 4);
-        //如果是空的(可能没人点赞)，直接返回一个空集合
-        if (top5 == null || top5.isEmpty()) {
+//        String key = BLOG_LIKED_KEY + id;
+//        //zrange key 0 4  查询zset中前5个元素
+//        Set<String> top5 = stringRedisTemplate.opsForZSet().range(key, 0, 4);
+//        //如果是空的(可能没人点赞)，直接返回一个空集合
+//        if (top5 == null || top5.isEmpty()) {
+//            return Result.ok(Collections.emptyList());
+//        }
+//        List<Long> ids = top5.stream().map(Long::valueOf).collect(Collectors.toList());
+//        //将ids使用`,`拼接，SQL语句查询出来的结果并不是按照我们期望的方式进行排
+//        //所以我们需要用order by field来指定排序方式，期望的排序方式就是按照查询出来的id进行排序
+//        String idsStr = StrUtil.join(",", ids);
+//        //select * from tb_user where id in (ids[0], ids[1] ...) order by field(id, ids[0], ids[1] ...)
+//        List<UserDTO> userDTOS = userService.query().in("id", ids)
+//                .last("order by field(id," + idsStr + ")")
+//                .list().stream()
+//                .map(user -> BeanUtil.copyProperties(user, UserDTO.class))
+//                .collect(Collectors.toList());
+//        return Result.ok(userDTOS);
+        String key = RedisConstants.LIKES_BIZ_KEY_PREFIX + id;
+        Set<String> members = stringRedisTemplate.opsForSet().members(key);
+
+        if (members == null || members.isEmpty()) {
             return Result.ok(Collections.emptyList());
         }
-        List<Long> ids = top5.stream().map(Long::valueOf).collect(Collectors.toList());
-        //将ids使用`,`拼接，SQL语句查询出来的结果并不是按照我们期望的方式进行排
-        //所以我们需要用order by field来指定排序方式，期望的排序方式就是按照查询出来的id进行排序
+
+        List<Long> ids = members.stream()
+                .map(Long::valueOf)
+                .limit(5)
+                .collect(Collectors.toList());
+
         String idsStr = StrUtil.join(",", ids);
-        //select * from tb_user where id in (ids[0], ids[1] ...) order by field(id, ids[0], ids[1] ...)
         List<UserDTO> userDTOS = userService.query().in("id", ids)
                 .last("order by field(id," + idsStr + ")")
                 .list().stream()
