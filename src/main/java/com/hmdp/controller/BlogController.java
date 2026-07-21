@@ -10,7 +10,9 @@ import com.hmdp.entity.Follow;
 import com.hmdp.entity.User;
 import com.hmdp.service.IBlogService;
 import com.hmdp.service.IFollowService;
+import com.hmdp.service.ILikedRecordService;
 import com.hmdp.service.IUserService;
+import com.hmdp.utils.RedisConstants;
 import com.hmdp.utils.SystemConstants;
 import com.hmdp.utils.UserHolder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +44,9 @@ public class BlogController {
     @Autowired
     private IFollowService followService;
 
+    @Autowired
+    private ILikedRecordService likedRecordService;
+
     @PostMapping
     public Result saveBlog(@RequestBody Blog blog) {
        return blogService.saveBlog(blog);
@@ -49,7 +54,16 @@ public class BlogController {
 
     @PutMapping("/like/{id}")
     public Result likeBlog(@PathVariable("id") Long id) {
-        return blogService.likeBlog(id);
+
+//        return blogService.likeBlog(id);
+        String key = RedisConstants.LIKES_BIZ_KEY_PREFIX + id;
+        Long userId = UserHolder.getUser().getId();
+        boolean isLiked = Boolean.TRUE.equals(stringRedisTemplate.opsForSet().isMember(key, userId.toString()));
+
+        // 调用新服务
+        likedRecordService.addLikeRecord(id, !isLiked);
+
+        return Result.ok(!isLiked);
     }
 
     @GetMapping("/likes/{id}")
